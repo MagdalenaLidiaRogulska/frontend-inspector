@@ -1,21 +1,15 @@
 {
   "name": "frontend-inspector",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devEngines": {
-    "packageManager": {
-      "name": "pnpm",
-      "version": "11.25.0",
-      "onFail": "download"
-    }
-  },
+  "version": "0.1.0",
+  "private": true,
+  "description": "A Chrome DevTools extension for inspecting frontend components, analyzing renders, debugging runtime issues, and generating structured bug reports.",
+  "license": "MIT",
   "packageManager": "pnpm@11.25.0",
-  "type": "module"
+  "scripts": {
+    "typecheck": "tsc -b",
+    "typecheck:clean": "tsc -b --clean"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
 }

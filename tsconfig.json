@@ -1,0 +1,21 @@
+// {
+//   "files": [],
+//   "references": [
+//     { "path": "./packages/shared" },
+//     { "path": "./packages/protocol" },
+//     { "path": "./packages/core" },
+//     { "path": "./packages/ui" },
+//     { "path": "./adapters/react" },
+//     { "path": "./apps/extension" },
+//     { "path": "./apps/devtools" },
+//     { "path": "./apps/demo-app" }
+//   ]
+// }
+
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/shared" },
+    { "path": "./packages/protocol" }
+  ]
+}
