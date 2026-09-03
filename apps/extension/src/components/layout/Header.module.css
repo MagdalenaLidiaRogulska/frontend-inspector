@@ -1,0 +1,32 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  height: var(--header-height);
+  padding: 0 var(--spacing-3);
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+}
+
+.title {
+  font-weight: 600;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.framework {
+  color: var(--color-info);
+}
+
+.connected {
+  color: var(--color-success);
+}
