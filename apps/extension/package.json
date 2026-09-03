@@ -12,6 +12,7 @@
     "@types/react-dom": "^19.2.5"
   },
   "dependencies": {
+    "@frontend-inspector/react-adapter": "workspace:*",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   }

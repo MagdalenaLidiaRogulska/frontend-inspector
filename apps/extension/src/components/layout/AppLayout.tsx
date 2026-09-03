@@ -7,12 +7,13 @@ import styles from "./AppLayout.module.css";
 
 interface AppLayoutProps {
   children: ReactNode;
+  isReactDetected: boolean;
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+export function AppLayout({ children, isReactDetected }: AppLayoutProps) {
   return (
     <div className={styles.layout}>
-      <Header />
+      <Header isReactDetected={isReactDetected} />
 
       <div className={styles.content}>
         <Sidebar />

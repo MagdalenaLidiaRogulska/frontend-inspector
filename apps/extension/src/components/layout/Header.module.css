@@ -30,3 +30,7 @@
 .connected {
   color: var(--color-success);
 }
+
+.disconnected {
+  color: var(--color-text-secondary);
+}
