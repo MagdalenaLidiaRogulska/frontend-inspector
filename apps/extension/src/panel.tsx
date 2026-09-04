@@ -42,6 +42,8 @@ function App() {
 
     port.onDisconnect.addListener(() => {
       console.info("[Frontend Inspector] Disconnected from background.");
+
+      portRef.current = null;
     });
 
     return () => {
@@ -78,31 +80,73 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      if (!isPickerActive) {
+        return;
+      }
+
+      const port = portRef.current;
+
+      if (!port) {
+        setIsPickerActive(false);
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+
+      console.info("[Frontend Inspector] Cancelling element picker.");
+
+      const message: PanelMessage = {
+        type: "CANCEL_ELEMENT_PICKER",
+        tabId: chrome.devtools.inspectedWindow.tabId,
+      };
+
+      port.postMessage(message);
+
+      setIsPickerActive(false);
+    };
+
+    window.addEventListener("keydown", handleKeyDown, true);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown, true);
+    };
+  }, [isPickerActive]);
+
+  const handleStartPicker = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const port = portRef.current;
+
+    if (!port) {
+      console.error(
+        "[Frontend Inspector] Background connection is not available.",
+      );
+
+      return;
+    }
+
+    event.currentTarget.blur();
+
+    setIsPickerActive(true);
+
+    const message: PanelMessage = {
+      type: "START_ELEMENT_PICKER",
+      tabId: chrome.devtools.inspectedWindow.tabId,
+    };
+
+    port.postMessage(message);
+  };
+
   return (
     <AppLayout isReactDetected={isReactDetected}>
       <main>
-        <button
-          type="button"
-          onClick={() => {
-            const port = portRef.current;
-
-            if (!port) {
-              console.error(
-                "[Frontend Inspector] Background connection is not available.",
-              );
-              return;
-            }
-
-            setIsPickerActive(true);
-
-            const message: PanelMessage = {
-              type: "START_ELEMENT_PICKER",
-              tabId: chrome.devtools.inspectedWindow.tabId,
-            };
-
-            port.postMessage(message);
-          }}
-        >
+        <button type="button" onClick={handleStartPicker}>
           {isPickerActive ? "Picking..." : "Pick element"}
         </button>
 

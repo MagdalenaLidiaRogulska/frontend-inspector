@@ -60,6 +60,18 @@ chrome.runtime.onConnect.addListener((port) => {
 
       return;
     }
+
+    if (message.type === "CANCEL_ELEMENT_PICKER") {
+      void ensureContentScript(message.tabId).then(() => {
+        const contentMessage: ContentMessage = {
+          type: "CANCEL_ELEMENT_PICKER",
+        };
+
+        void chrome.tabs.sendMessage(message.tabId, contentMessage);
+      });
+
+      return;
+    }
   });
 
   port.onDisconnect.addListener(() => {

@@ -12,6 +12,10 @@ export type PanelMessage =
   | {
       type: "START_ELEMENT_PICKER";
       tabId: number;
+    }
+  | {
+      type: "CANCEL_ELEMENT_PICKER";
+      tabId: number;
     };
 
 export type ContentMessage =
@@ -20,6 +24,9 @@ export type ContentMessage =
     }
   | {
       type: "START_ELEMENT_PICKER";
+    }
+  | {
+      type: "CANCEL_ELEMENT_PICKER";
     };
 
 export type BackgroundMessage = {
