@@ -1,5 +1,8 @@
+import type { ComponentInfo } from "@frontend-inspector/core";
+
 export interface ReactAdapter {
   detect(): boolean;
+  inspectElement(element: Element): ComponentInfo | null;
 }
 
 interface ReactDevToolsHook {
@@ -86,12 +89,58 @@ function findComponentFiber(fiber: ReactFiber): ReactFiber | null {
   return null;
 }
 
+const componentIds = new WeakMap<object, string>();
+
+let nextComponentId = 1;
+
+function createComponentId(fiber: ReactFiber): string {
+  const existingId = componentIds.get(fiber);
+
+  if (existingId) {
+    return existingId;
+  }
+
+  const id = `react-component-${nextComponentId}`;
+
+  nextComponentId += 1;
+
+  componentIds.set(fiber, id);
+
+  return id;
+}
+
 export function createReactAdapter(): ReactAdapter {
   return {
     detect(): boolean {
       const hook = getReactDevToolsHook();
 
       return Boolean(hook?.renderers && hook.renderers.size > 0);
+    },
+
+    inspectElement(element: Element): ComponentInfo | null {
+      const fiber = findFiberFromElement(element);
+
+      if (!fiber) {
+        return null;
+      }
+
+      const componentFiber = findComponentFiber(fiber);
+
+      if (!componentFiber) {
+        return null;
+      }
+
+      const name = getComponentName(componentFiber);
+
+      if (!name) {
+        return null;
+      }
+
+      return {
+        id: createComponentId(componentFiber),
+        name,
+        framework: "react",
+      };
     },
   };
 }
