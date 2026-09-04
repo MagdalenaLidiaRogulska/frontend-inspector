@@ -1,4 +1,8 @@
-// import { createReactAdapter } from "@frontend-inspector/react-adapter";
+import type {
+  BackgroundMessage,
+  PanelMessage,
+  SelectedElement,
+} from "@frontend-inspector/protocol";
 import { StrictMode, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -6,17 +10,14 @@ import { AppLayout } from "./components/layout/AppLayout";
 import "./styles/tokens.css";
 import "./styles/globals.css";
 
-interface SelectedElement {
-  tagName: string;
-  id: string;
-  className: string;
-}
+// import { createReactAdapter } from "@frontend-inspector/react-adapter";
 
 function App() {
   const [isReactDetected, setIsReactDetected] = useState(false);
   const [isPickerActive, setIsPickerActive] = useState(false);
   const [selectedElement, setSelectedElement] =
     useState<SelectedElement | null>(null);
+
   const portRef = useRef<chrome.runtime.Port | null>(null);
 
   useEffect(() => {
@@ -32,10 +33,12 @@ function App() {
 
     console.info("[Frontend Inspector] Connected to background.");
 
-    port.postMessage({
+    const message: PanelMessage = {
       type: "PING_CONTENT_SCRIPT",
       tabId: chrome.devtools.inspectedWindow.tabId,
-    });
+    };
+
+    port.postMessage(message);
 
     port.onDisconnect.addListener(() => {
       console.info("[Frontend Inspector] Disconnected from background.");
@@ -54,14 +57,7 @@ function App() {
       return;
     }
 
-    const handleMessage = (message: {
-      type?: string;
-      element?: {
-        tagName: string;
-        id: string;
-        className: string;
-      };
-    }) => {
+    const handleMessage = (message: BackgroundMessage) => {
       if (message.type !== "ELEMENT_SELECTED") {
         return;
       }
@@ -71,10 +67,7 @@ function App() {
         message.element,
       );
 
-      if (message.element) {
-        setSelectedElement(message.element);
-      }
-
+      setSelectedElement(message.element);
       setIsPickerActive(false);
     };
 
@@ -102,14 +95,17 @@ function App() {
 
             setIsPickerActive(true);
 
-            port.postMessage({
+            const message: PanelMessage = {
               type: "START_ELEMENT_PICKER",
               tabId: chrome.devtools.inspectedWindow.tabId,
-            });
+            };
+
+            port.postMessage(message);
           }}
         >
           {isPickerActive ? "Picking..." : "Pick element"}
         </button>
+
         {selectedElement && (
           <section>
             <h2>Selected Element</h2>
@@ -129,6 +125,7 @@ function App() {
             </div>
           </section>
         )}
+
         <h1>Frontend Inspector</h1>
       </main>
     </AppLayout>

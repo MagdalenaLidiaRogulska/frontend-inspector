@@ -1,18 +1,33 @@
-import type { Framework, SourceLocation } from "@frontend-inspector/shared";
-
-export interface ComponentInfo {
+export interface SelectedElement {
+  tagName: string;
   id: string;
-  name: string;
-  framework: Framework;
-  props?: Record<string, unknown>;
-  state?: Record<string, unknown>;
-  parentId?: string;
-  childrenIds?: string[];
-  source?: SourceLocation;
+  className: string;
 }
 
-export interface ProtocolMessage<TPayload = unknown> {
-  version: 1;
-  type: string;
-  payload: TPayload;
+export type PanelMessage =
+  | {
+      type: "PING_CONTENT_SCRIPT";
+      tabId: number;
+    }
+  | {
+      type: "START_ELEMENT_PICKER";
+      tabId: number;
+    };
+
+export type ContentMessage =
+  | {
+      type: "PING_CONTENT_SCRIPT";
+    }
+  | {
+      type: "START_ELEMENT_PICKER";
+    };
+
+export type BackgroundMessage = {
+  type: "ELEMENT_SELECTED";
+  element: SelectedElement;
+};
+
+export interface ContentPingResponse {
+  type: "PONG_CONTENT_SCRIPT";
+  source: "frontend-inspector-content";
 }

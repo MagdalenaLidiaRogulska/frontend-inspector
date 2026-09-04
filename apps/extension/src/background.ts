@@ -1,12 +1,20 @@
+import type {
+  BackgroundMessage,
+  ContentMessage,
+  PanelMessage,
+} from "@frontend-inspector/protocol";
+
 console.info("[Frontend Inspector] Background service worker started.");
 
 let devtoolsPort: chrome.runtime.Port | null = null;
 
 async function ensureContentScript(tabId: number): Promise<void> {
   try {
-    await chrome.tabs.sendMessage(tabId, {
+    const message: ContentMessage = {
       type: "PING_CONTENT_SCRIPT",
-    });
+    };
+
+    await chrome.tabs.sendMessage(tabId, message);
 
     console.info("[Frontend Inspector] Content script is already available.");
   } catch {
@@ -32,24 +40,22 @@ chrome.runtime.onConnect.addListener((port) => {
 
   devtoolsPort = port;
 
-  port.onMessage.addListener((message) => {
+  port.onMessage.addListener((message: PanelMessage) => {
     console.info("[Frontend Inspector] Background received message:", message);
 
-    if (message?.type === "PING_CONTENT_SCRIPT") {
-      const tabId = message.tabId;
-
-      void ensureContentScript(tabId);
+    if (message.type === "PING_CONTENT_SCRIPT") {
+      void ensureContentScript(message.tabId);
 
       return;
     }
 
-    if (message?.type === "START_ELEMENT_PICKER") {
-      const tabId = message.tabId;
-
-      void ensureContentScript(tabId).then(() => {
-        chrome.tabs.sendMessage(tabId, {
+    if (message.type === "START_ELEMENT_PICKER") {
+      void ensureContentScript(message.tabId).then(() => {
+        const contentMessage: ContentMessage = {
           type: "START_ELEMENT_PICKER",
-        });
+        };
+
+        void chrome.tabs.sendMessage(message.tabId, contentMessage);
       });
 
       return;
@@ -63,8 +69,8 @@ chrome.runtime.onConnect.addListener((port) => {
   });
 });
 
-chrome.runtime.onMessage.addListener((message, sender) => {
-  if (message?.type !== "ELEMENT_SELECTED") {
+chrome.runtime.onMessage.addListener((message: BackgroundMessage, sender) => {
+  if (message.type !== "ELEMENT_SELECTED") {
     return;
   }
 
@@ -75,8 +81,5 @@ chrome.runtime.onMessage.addListener((message, sender) => {
     sender.tab?.id,
   );
 
-  devtoolsPort?.postMessage({
-    type: "ELEMENT_SELECTED",
-    element: message.element,
-  });
+  devtoolsPort?.postMessage(message);
 });
