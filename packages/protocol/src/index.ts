@@ -1,4 +1,7 @@
+import type { ComponentInfo } from "@frontend-inspector/shared";
+
 export interface SelectedElement {
+  inspectorId: string;
   tagName: string;
   id: string;
   className: string;
@@ -29,10 +32,16 @@ export type ContentMessage =
       type: "CANCEL_ELEMENT_PICKER";
     };
 
-export type BackgroundMessage = {
-  type: "ELEMENT_SELECTED";
-  element: SelectedElement;
-};
+export type BackgroundMessage =
+  | {
+      type: "ELEMENT_SELECTED";
+      element: SelectedElement;
+    }
+  | {
+      type: "COMPONENT_INSPECTED";
+      inspectorId: string;
+      component: ComponentInfo | null;
+    };
 
 export interface ContentPingResponse {
   type: "PONG_CONTENT_SCRIPT";

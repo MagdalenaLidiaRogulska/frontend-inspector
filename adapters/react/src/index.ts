@@ -1,4 +1,4 @@
-import type { ComponentInfo } from "@frontend-inspector/core";
+import type { ComponentInfo } from "@frontend-inspector/shared";
 
 export interface ReactAdapter {
   detect(): boolean;
@@ -140,6 +140,7 @@ export function createReactAdapter(): ReactAdapter {
         id: createComponentId(componentFiber),
         name,
         framework: "react",
+        props: componentFiber.memoizedProps ?? {},
       };
     },
   };

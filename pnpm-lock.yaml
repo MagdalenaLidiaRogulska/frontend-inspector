@@ -214,7 +214,14 @@ importers:
         specifier: ^8.2.2
         version: 8.2.2
 
-  adapters/react: {}
+  adapters/react:
+    dependencies:
+      '@frontend-inspector/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@frontend-inspector/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
 
   apps/devtools:
     dependencies:
@@ -240,6 +247,9 @@ importers:
       '@frontend-inspector/react-adapter':
         specifier: workspace:*
         version: link:../../adapters/react
+      '@frontend-inspector/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -257,7 +267,11 @@ importers:
         specifier: ^19.2.5
         version: 19.2.5(@types/react@19.2.18)
 
-  packages/core: {}
+  packages/core:
+    dependencies:
+      '@frontend-inspector/shared':
+        specifier: workspace:*
+        version: link:../shared
 
   packages/protocol:
     dependencies:

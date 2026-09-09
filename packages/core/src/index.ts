@@ -1,1 +1,5 @@
-export type { ComponentInfo, Framework } from "./inspector/types";
+export type {
+  ComponentInfo,
+  Framework,
+  SourceLocation,
+} from "@frontend-inspector/shared";

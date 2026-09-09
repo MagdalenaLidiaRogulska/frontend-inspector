@@ -82,16 +82,29 @@ chrome.runtime.onConnect.addListener((port) => {
 });
 
 chrome.runtime.onMessage.addListener((message: BackgroundMessage, sender) => {
-  if (message.type !== "ELEMENT_SELECTED") {
+  if (message.type === "ELEMENT_SELECTED") {
+    console.info(
+      "[Frontend Inspector] Background received selected element:",
+      message.element,
+      "from tab:",
+      sender.tab?.id,
+    );
+
+    devtoolsPort?.postMessage(message);
+
     return;
   }
 
-  console.info(
-    "[Frontend Inspector] Background received selected element:",
-    message.element,
-    "from tab:",
-    sender.tab?.id,
-  );
+  if (message.type === "COMPONENT_INSPECTED") {
+    console.info(
+      "[Frontend Inspector] Background received component:",
+      message.component,
+      "for inspector:",
+      message.inspectorId,
+      "from tab:",
+      sender.tab?.id,
+    );
 
-  devtoolsPort?.postMessage(message);
+    devtoolsPort?.postMessage(message);
+  }
 });

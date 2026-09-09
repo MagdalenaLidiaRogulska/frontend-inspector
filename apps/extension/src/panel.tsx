@@ -3,6 +3,7 @@ import type {
   PanelMessage,
   SelectedElement,
 } from "@frontend-inspector/protocol";
+import type { ComponentInfo } from "@frontend-inspector/shared";
 import { StrictMode, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -17,6 +18,8 @@ function App() {
   const [isPickerActive, setIsPickerActive] = useState(false);
   const [selectedElement, setSelectedElement] =
     useState<SelectedElement | null>(null);
+  const [selectedComponent, setSelectedComponent] =
+    useState<ComponentInfo | null>(null);
 
   const portRef = useRef<chrome.runtime.Port | null>(null);
 
@@ -43,7 +46,9 @@ function App() {
     port.onDisconnect.addListener(() => {
       console.info("[Frontend Inspector] Disconnected from background.");
 
-      portRef.current = null;
+      if (portRef.current === port) {
+        portRef.current = null;
+      }
     });
 
     return () => {
@@ -60,17 +65,28 @@ function App() {
     }
 
     const handleMessage = (message: BackgroundMessage) => {
-      if (message.type !== "ELEMENT_SELECTED") {
+      if (message.type === "ELEMENT_SELECTED") {
+        console.info(
+          "[Frontend Inspector] Panel received selected element:",
+          message.element,
+        );
+
+        setSelectedElement(message.element);
+        setIsPickerActive(false);
+
         return;
       }
 
-      console.info(
-        "[Frontend Inspector] Panel received selected element:",
-        message.element,
-      );
+      if (message.type === "COMPONENT_INSPECTED") {
+        console.info(
+          "[Frontend Inspector] Panel received component:",
+          message.component,
+        );
 
-      setSelectedElement(message.element);
-      setIsPickerActive(false);
+        setSelectedComponent(message.component);
+
+        return;
+      }
     };
 
     port.onMessage.addListener(handleMessage);
@@ -150,22 +166,29 @@ function App() {
           {isPickerActive ? "Picking..." : "Pick element"}
         </button>
 
-        {selectedElement && (
+        {selectedComponent && (
           <section>
-            <h2>Selected Element</h2>
+            <h2>React Component</h2>
 
             <div>
-              <strong>{selectedElement.tagName}</strong>
+              <strong>{selectedComponent.name}</strong>
             </div>
 
             <div>
-              <span>id: </span>
-              <code>{selectedElement.id || "—"}</code>
+              <span>Framework: </span>
+              <code>{selectedComponent.framework}</code>
             </div>
 
             <div>
-              <span>class: </span>
-              <code>{selectedElement.className || "—"}</code>
+              <span>Component ID: </span>
+              <code>{selectedComponent.id}</code>
+            </div>
+            <div>
+              <h3>Props</h3>
+
+              <pre>
+                {JSON.stringify(selectedComponent.props ?? {}, null, 2)}
+              </pre>
             </div>
           </section>
         )}

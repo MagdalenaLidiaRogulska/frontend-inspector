@@ -10,6 +10,7 @@ export default defineConfig({
         panel: "panel.html",
         background: "src/background.ts",
         content: "src/content.ts",
+        page: "src/page.ts",
       },
       output: {
         entryFileNames: (chunkInfo) => {
@@ -19,6 +20,10 @@ export default defineConfig({
 
           if (chunkInfo.name === "content") {
             return "content.js";
+          }
+
+          if (chunkInfo.name === "page") {
+            return "page.js";
           }
 
           return "assets/[name]-[hash].js";

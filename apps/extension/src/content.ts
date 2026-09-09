@@ -3,10 +3,21 @@ import type {
   ContentMessage,
   ContentPingResponse,
 } from "@frontend-inspector/protocol";
+import type { ComponentInfo } from "@frontend-inspector/shared";
 
 console.info("[Frontend Inspector] Content script loaded.");
 
+interface InspectElementResponse {
+  source: "frontend-inspector-page";
+  type: "COMPONENT_INSPECTED";
+  inspectorId: string;
+  component: ComponentInfo | null;
+}
+
 let cancelActivePicker: (() => void) | null = null;
+let nextElementId = 1;
+
+window.addEventListener("message", handlePageMessage);
 
 chrome.runtime.onMessage.addListener(
   (message: ContentMessage, _sender, sendResponse) => {
@@ -140,11 +151,27 @@ function startElementPicker(): void {
 
     console.info("[Frontend Inspector] Element selected:", target);
 
+    const inspectorId = `frontend-inspector-${nextElementId}`;
+
+    nextElementId += 1;
+
+    target.setAttribute("data-frontend-inspector-id", inspectorId);
+
+    window.postMessage(
+      {
+        source: "frontend-inspector-content",
+        type: "INSPECT_ELEMENT",
+        inspectorId,
+      },
+      "*",
+    );
+
     cleanup();
 
     const message: BackgroundMessage = {
       type: "ELEMENT_SELECTED",
       element: {
+        inspectorId,
         tagName: target.tagName,
         id: target.id,
         className: typeof target.className === "string" ? target.className : "",
@@ -159,4 +186,31 @@ function startElementPicker(): void {
   document.addEventListener("mousemove", handleMouseMove, true);
   document.addEventListener("click", handleClick, true);
   document.addEventListener("keydown", handleKeyDown, true);
+}
+
+function handlePageMessage(event: MessageEvent): void {
+  if (event.source !== window) {
+    return;
+  }
+
+  const data = event.data as Partial<InspectElementResponse> | null;
+
+  if (
+    !data ||
+    data.source !== "frontend-inspector-page" ||
+    data.type !== "COMPONENT_INSPECTED" ||
+    typeof data.inspectorId !== "string"
+  ) {
+    return;
+  }
+
+  console.info("[Frontend Inspector] Component inspection received:", data);
+
+  const message: BackgroundMessage = {
+    type: "COMPONENT_INSPECTED",
+    inspectorId: data.inspectorId,
+    component: data.component ?? null,
+  };
+
+  chrome.runtime.sendMessage(message);
 }
