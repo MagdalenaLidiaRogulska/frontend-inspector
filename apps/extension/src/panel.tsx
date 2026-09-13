@@ -190,6 +190,14 @@ function App() {
                 {JSON.stringify(selectedComponent.props ?? {}, null, 2)}
               </pre>
             </div>
+
+            <div>
+              <h3>State</h3>
+
+              <pre>
+                {JSON.stringify(selectedComponent.state ?? {}, null, 2)}
+              </pre>
+            </div>
           </section>
         )}
 

@@ -81,22 +81,20 @@ function getComponentName(fiber: ReactFiber): string | null {
 
 function getComponentState(fiber: ReactFiber): Record<string, unknown> {
   const state: Record<string, unknown> = {};
-
   let hook = fiber.memoizedState;
   let index = 0;
 
   while (hook) {
     const value = hook.memoizedState;
 
-    if (
-      value === null ||
-      typeof value === "string" ||
-      typeof value === "number" ||
-      typeof value === "boolean"
-    ) {
+    if (isSimpleStateValue(value)) {
       state[`hook-${index}`] = value;
+    } else if (isRefValue(value)) {
+      state[`hook-${index}`] = {
+        current: describeValue(value.current),
+      };
     } else {
-      state[`hook-${index}`] = `[${typeof value}]`;
+      state[`hook-${index}`] = "[complex]";
     }
 
     hook = hook.next ?? null;
@@ -104,11 +102,48 @@ function getComponentState(fiber: ReactFiber): Record<string, unknown> {
   }
 
   console.info("[React Adapter] Extracted state:", state);
-
   return state;
 }
 
-function serializeValue(value: unknown): unknown {
+function describeValue(value: unknown): unknown {
+  if (value === null) {
+    return null;
+  }
+
+  if (value instanceof Element) {
+    return {
+      type: "element",
+      tagName: value.tagName.toLowerCase(),
+    };
+  }
+
+  if (typeof value === "object") {
+    return `[object: ${value.constructor?.name || "Object"}]`;
+  }
+
+  if (typeof value === "function") {
+    return `[function: ${value.name || "anonymous"}]`;
+  }
+
+  return value;
+}
+
+function isSimpleStateValue(
+  value: unknown,
+): value is null | string | number | boolean {
+  return (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  );
+}
+
+function isRefValue(value: unknown): value is { current: unknown } {
+  return typeof value === "object" && value !== null && "current" in value;
+}
+
+function serializeValue(value: unknown, seen = new WeakSet<object>()): unknown {
   if (
     value === null ||
     typeof value === "string" ||
@@ -134,17 +169,23 @@ function serializeValue(value: unknown): unknown {
     return `[function: ${value.name || "anonymous"}]`;
   }
 
-  if (Array.isArray(value)) {
-    return value.map(serializeValue);
-  }
-
   if (typeof value === "object") {
+    if (seen.has(value)) {
+      return "[circular]";
+    }
+
+    seen.add(value);
+
+    if (Array.isArray(value)) {
+      return value.map((item) => serializeValue(item, seen));
+    }
+
     const result: Record<string, unknown> = {};
 
     for (const [key, childValue] of Object.entries(
       value as Record<string, unknown>,
     )) {
-      result[key] = serializeValue(childValue);
+      result[key] = serializeValue(childValue, seen);
     }
 
     return result;

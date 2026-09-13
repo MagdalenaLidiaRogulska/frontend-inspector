@@ -225,6 +225,12 @@ importers:
 
   apps/devtools:
     dependencies:
+      '@frontend-inspector/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      '@frontend-inspector/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -232,6 +238,9 @@ importers:
         specifier: ^19.2.8
         version: 19.2.8(react@19.2.8)
     devDependencies:
+      '@types/chrome':
+        specifier: ^0.2.7
+        version: 0.2.7
       '@types/react':
         specifier: ^19.2.18
         version: 19.2.18
