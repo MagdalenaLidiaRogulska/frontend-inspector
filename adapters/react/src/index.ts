@@ -1,4 +1,4 @@
-import type { ComponentInfo } from "@frontend-inspector/shared";
+import type { ComponentInfo, HookInfo } from "@frontend-inspector/shared";
 
 export interface ReactAdapter {
   detect(): boolean;
@@ -12,7 +12,10 @@ interface ReactDevToolsHook {
 interface ReactHook {
   memoizedState?: unknown;
   baseState?: unknown;
+  baseQueue?: unknown;
+  queue?: unknown;
   next?: ReactHook | null;
+  tag?: number;
 }
 
 interface ReactFiber {
@@ -79,30 +82,63 @@ function getComponentName(fiber: ReactFiber): string | null {
   return null;
 }
 
-function getComponentState(fiber: ReactFiber): Record<string, unknown> {
-  const state: Record<string, unknown> = {};
+function getComponentState(fiber: ReactFiber): HookInfo[] {
+  const hooks: HookInfo[] = [];
   let hook = fiber.memoizedState;
   let index = 0;
 
   while (hook) {
     const value = hook.memoizedState;
 
-    if (isSimpleStateValue(value)) {
-      state[`hook-${index}`] = value;
+    if (hook.queue) {
+      hooks.push({
+        index,
+        type: "state",
+        value: describeStateValue(value),
+      });
     } else if (isRefValue(value)) {
-      state[`hook-${index}`] = {
+      hooks.push({
+        index,
+        type: "ref",
         current: describeValue(value.current),
-      };
+      });
+    } else if (isEffectValue(value)) {
+      hooks.push({
+        index,
+        type: "effect",
+        deps: describeEffectDeps(value.deps),
+      });
     } else {
-      state[`hook-${index}`] = "[complex]";
+      hooks.push({
+        index,
+        type: "unknown",
+      });
     }
 
     hook = hook.next ?? null;
     index += 1;
   }
 
-  console.info("[React Adapter] Extracted state:", state);
-  return state;
+  console.info("[React Adapter] Extracted hooks:", hooks);
+
+  return hooks;
+}
+
+function isEffectValue(value: unknown): value is { deps?: unknown } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "create" in value &&
+    "deps" in value
+  );
+}
+
+function describeEffectDeps(value: unknown): unknown {
+  if (!Array.isArray(value)) {
+    return describeValue(value);
+  }
+
+  return value.map((item) => describeValue(item));
 }
 
 function describeValue(value: unknown): unknown {
@@ -275,4 +311,60 @@ export function createReactAdapter(): ReactAdapter {
       };
     },
   };
+}
+
+function describeStateValue(value: unknown, depth = 0): unknown {
+  if (depth > 2) {
+    return "[nested]";
+  }
+
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return value;
+  }
+
+  if (typeof value === "undefined") {
+    return "[undefined]";
+  }
+
+  if (typeof value === "function") {
+    return `[function: ${value.name || "anonymous"}]`;
+  }
+
+  if (typeof value === "symbol") {
+    return `[symbol: ${value.toString()}]`;
+  }
+
+  if (typeof value === "bigint") {
+    return `[bigint: ${value.toString()}]`;
+  }
+
+  if (value instanceof Element) {
+    return {
+      type: "element",
+      tagName: value.tagName.toLowerCase(),
+    };
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => describeStateValue(item, depth + 1));
+  }
+
+  if (typeof value === "object") {
+    const result: Record<string, unknown> = {};
+
+    for (const [key, childValue] of Object.entries(
+      value as Record<string, unknown>,
+    )) {
+      result[key] = describeStateValue(childValue, depth + 1);
+    }
+
+    return result;
+  }
+
+  return `[${typeof value}]`;
 }

@@ -12,12 +12,20 @@ export interface SourceLocation {
   column?: number;
 }
 
+export interface HookInfo {
+  index: number;
+  type: "state" | "ref" | "effect" | "unknown";
+  value?: unknown;
+  current?: unknown;
+  deps?: unknown;
+}
+
 export interface ComponentInfo {
   id: string;
   name: string;
   framework: Framework;
   props?: Record<string, unknown>;
-  state?: Record<string, unknown>;
+  state?: HookInfo[];
   parentId?: string;
   childrenIds?: string[];
   source?: SourceLocation;

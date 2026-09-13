@@ -192,11 +192,41 @@ function App() {
             </div>
 
             <div>
-              <h3>State</h3>
+              <h3>Hooks</h3>
 
-              <pre>
-                {JSON.stringify(selectedComponent.state ?? {}, null, 2)}
-              </pre>
+              {selectedComponent.state?.length ? (
+                <div>
+                  {selectedComponent.state.map((hook) => (
+                    <div key={hook.index}>
+                      <strong>
+                        {hook.type === "state"
+                          ? "useState"
+                          : hook.type === "ref"
+                            ? "useRef"
+                            : hook.type === "effect"
+                              ? "useEffect"
+                              : "Unknown"}
+                      </strong>
+
+                      <span> #{hook.index}</span>
+
+                      {hook.type === "state" && (
+                        <pre>{JSON.stringify(hook.value, null, 2)}</pre>
+                      )}
+
+                      {hook.type === "ref" && (
+                        <pre>{JSON.stringify(hook.current, null, 2)}</pre>
+                      )}
+
+                      {hook.type === "effect" && (
+                        <pre>{JSON.stringify(hook.deps, null, 2)}</pre>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>No hooks detected.</p>
+              )}
             </div>
           </section>
         )}
