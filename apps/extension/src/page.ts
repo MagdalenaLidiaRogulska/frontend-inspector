@@ -15,7 +15,8 @@ interface InspectElementResponse {
 
 const reactAdapter = createReactAdapter();
 
-console.info("[Frontend Inspector] Page bridge loaded.");
+// console.info("[Frontend Inspector] Page bridge loaded.");
+console.info("[Frontend Inspector] PAGE_TS_TEST_123");
 
 window.addEventListener("message", (event: MessageEvent) => {
   if (event.source !== window) {
@@ -42,15 +43,18 @@ window.addEventListener("message", (event: MessageEvent) => {
     return;
   }
 
+  console.info("[Frontend Inspector] Calling React adapter:", element);
+
   const component = reactAdapter.inspectElement(element);
+
+  console.info("[Frontend Inspector] Adapter returned:", component);
+
+  sendResponse(data.inspectorId, component);
 
   sendResponse(data.inspectorId, component);
 });
 
-function sendResponse(
-  inspectorId: string,
-  component: unknown,
-): void {
+function sendResponse(inspectorId: string, component: unknown): void {
   const response: InspectElementResponse = {
     source: "frontend-inspector-page",
     type: "COMPONENT_INSPECTED",

@@ -9,6 +9,12 @@ interface ReactDevToolsHook {
   renderers?: Map<unknown, unknown>;
 }
 
+interface ReactHook {
+  memoizedState?: unknown;
+  baseState?: unknown;
+  next?: ReactHook | null;
+}
+
 interface ReactFiber {
   return?: ReactFiber | null;
   child?: ReactFiber | null;
@@ -17,7 +23,7 @@ interface ReactFiber {
   type?: unknown;
   stateNode?: unknown;
   memoizedProps?: Record<string, unknown>;
-  memoizedState?: unknown;
+  memoizedState?: ReactHook | null;
 }
 
 function getReactDevToolsHook(): ReactDevToolsHook | undefined {
@@ -73,6 +79,80 @@ function getComponentName(fiber: ReactFiber): string | null {
   return null;
 }
 
+function getComponentState(fiber: ReactFiber): Record<string, unknown> {
+  const state: Record<string, unknown> = {};
+
+  let hook = fiber.memoizedState;
+  let index = 0;
+
+  while (hook) {
+    const value = hook.memoizedState;
+
+    if (
+      value === null ||
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      state[`hook-${index}`] = value;
+    } else {
+      state[`hook-${index}`] = `[${typeof value}]`;
+    }
+
+    hook = hook.next ?? null;
+    index += 1;
+  }
+
+  console.info("[React Adapter] Extracted state:", state);
+
+  return state;
+}
+
+function serializeValue(value: unknown): unknown {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return value;
+  }
+
+  if (typeof value === "undefined") {
+    return "[undefined]";
+  }
+
+  if (typeof value === "bigint") {
+    return `[bigint: ${value.toString()}]`;
+  }
+
+  if (typeof value === "symbol") {
+    return `[symbol: ${value.toString()}]`;
+  }
+
+  if (typeof value === "function") {
+    return `[function: ${value.name || "anonymous"}]`;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(serializeValue);
+  }
+
+  if (typeof value === "object") {
+    const result: Record<string, unknown> = {};
+
+    for (const [key, childValue] of Object.entries(
+      value as Record<string, unknown>,
+    )) {
+      result[key] = serializeValue(childValue);
+    }
+
+    return result;
+  }
+
+  return `[${typeof value}]`;
+}
+
 function findComponentFiber(fiber: ReactFiber): ReactFiber | null {
   let current: ReactFiber | null | undefined = fiber;
 
@@ -110,6 +190,7 @@ function createComponentId(fiber: ReactFiber): string {
 }
 
 export function createReactAdapter(): ReactAdapter {
+  console.info("[React Adapter] createReactAdapter loaded");
   return {
     detect(): boolean {
       const hook = getReactDevToolsHook();
@@ -118,6 +199,8 @@ export function createReactAdapter(): ReactAdapter {
     },
 
     inspectElement(element: Element): ComponentInfo | null {
+      console.info("[React Adapter] INSPECT_ELEMENT_TEST_123");
+      console.info("[React Adapter] inspectElement called");
       const fiber = findFiberFromElement(element);
 
       if (!fiber) {
@@ -126,21 +209,28 @@ export function createReactAdapter(): ReactAdapter {
 
       const componentFiber = findComponentFiber(fiber);
 
-      if (!componentFiber) {
-        return null;
-      }
+      if (!componentFiber) return null;
 
       const name = getComponentName(componentFiber);
 
-      if (!name) {
-        return null;
-      }
+      if (!name) return null;
+
+      console.info("[React Adapter] Component fiber:", componentFiber);
+      console.info(
+        "[React Adapter] Component memoizedState:",
+        componentFiber.memoizedState,
+      );
+
+      const state = getComponentState(componentFiber);
+
+      console.info("[React Adapter] Extracted state:", state);
 
       return {
         id: createComponentId(componentFiber),
         name,
         framework: "react",
         props: componentFiber.memoizedProps ?? {},
+        state,
       };
     },
   };

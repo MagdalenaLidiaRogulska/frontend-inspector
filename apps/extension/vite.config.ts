@@ -1,6 +1,17 @@
 import { defineConfig } from "vite";
 
+const reactAdapterPath = new URL(
+  "../../adapters/react/src/index.ts",
+  import.meta.url,
+).pathname;
+
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@frontend-inspector/react-adapter": reactAdapterPath,
+    },
+  },
+
   build: {
     outDir: "dist",
     emptyOutDir: true,
