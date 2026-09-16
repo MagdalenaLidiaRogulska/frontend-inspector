@@ -15,6 +15,7 @@ export interface SourceLocation {
 export interface HookInfo {
   index: number;
   type: "state" | "ref" | "effect" | "unknown";
+  name?: string;
   value?: unknown;
   current?: unknown;
   deps?: unknown;

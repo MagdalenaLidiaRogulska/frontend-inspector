@@ -27,6 +27,11 @@ interface ReactFiber {
   stateNode?: unknown;
   memoizedProps?: Record<string, unknown>;
   memoizedState?: ReactHook | null;
+  _debugSource?: {
+    fileName?: string;
+    lineNumber?: number;
+    columnNumber?: number;
+  } | null;
 }
 
 function getReactDevToolsHook(): ReactDevToolsHook | undefined {
@@ -266,6 +271,21 @@ function createComponentId(fiber: ReactFiber): string {
   return id;
 }
 
+function describeComponentType(value: unknown): unknown {
+  if (typeof value === "function") {
+    const source = Function.prototype.toString.call(value);
+
+    return {
+      name: value.name,
+      sourceLength: source.length,
+      sourceStart: source.slice(0, 500),
+      sourceMap: source.match(/\/\/# sourceMappingURL=.*$/m)?.[0] ?? null,
+    };
+  }
+
+  return value;
+}
+
 export function createReactAdapter(): ReactAdapter {
   console.info("[React Adapter] createReactAdapter loaded");
   return {
@@ -293,6 +313,21 @@ export function createReactAdapter(): ReactAdapter {
       if (!name) return null;
 
       console.info("[React Adapter] Component fiber:", componentFiber);
+      console.info(
+        "[React Adapter] Component source:",
+        componentFiber._debugSource,
+      );
+
+      console.info(
+        "[React Adapter] Component type:",
+        describeComponentType(componentFiber.type),
+      );
+
+      console.info(
+        "[React Adapter] Component elementType:",
+        describeComponentType(componentFiber.elementType),
+      );
+
       console.info(
         "[React Adapter] Component memoizedState:",
         componentFiber.memoizedState,

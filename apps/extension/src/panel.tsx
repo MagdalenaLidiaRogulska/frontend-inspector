@@ -3,15 +3,13 @@ import type {
   PanelMessage,
   SelectedElement,
 } from "@frontend-inspector/protocol";
-import type { ComponentInfo } from "@frontend-inspector/shared";
+import type { ComponentInfo, HookInfo } from "@frontend-inspector/shared";
 import { StrictMode, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 import { AppLayout } from "./components/layout/AppLayout";
 import "./styles/tokens.css";
 import "./styles/globals.css";
-
-// import { createReactAdapter } from "@frontend-inspector/react-adapter";
 
 function App() {
   const [isReactDetected, setIsReactDetected] = useState(false);
@@ -183,6 +181,7 @@ function App() {
               <span>Component ID: </span>
               <code>{selectedComponent.id}</code>
             </div>
+
             <div>
               <h3>Props</h3>
 
@@ -196,19 +195,12 @@ function App() {
 
               {selectedComponent.state?.length ? (
                 <div>
-                  {selectedComponent.state.map((hook) => (
+                  {selectedComponent.state.map((hook: HookInfo) => (
                     <div key={hook.index}>
                       <strong>
-                        {hook.type === "state"
-                          ? "useState"
-                          : hook.type === "ref"
-                            ? "useRef"
-                            : hook.type === "effect"
-                              ? "useEffect"
-                              : "Unknown"}
+                        {getHookName(hook)}{" "}
+                        {hook.name ?? `#${hook.index} (unknown)`}
                       </strong>
-
-                      <span> #{hook.index}</span>
 
                       {hook.type === "state" && (
                         <pre>{JSON.stringify(hook.value, null, 2)}</pre>
@@ -235,6 +227,22 @@ function App() {
       </main>
     </AppLayout>
   );
+}
+
+function getHookName(hook: HookInfo): string {
+  switch (hook.type) {
+    case "state":
+      return "useState";
+
+    case "ref":
+      return "useRef";
+
+    case "effect":
+      return "useEffect";
+
+    default:
+      return "Unknown";
+  }
 }
 
 const rootElement = document.getElementById("root");
